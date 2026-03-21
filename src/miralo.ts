@@ -6,6 +6,7 @@ import corsPlugin from './plugins/cors.js'
 import userRoutes from './modules/users/userRoutes.js'
 import roomRoutes from './modules/rooms/roomRoutes.js'
 import chatRoutes from './modules/chats/chatRoutes.js'
+import screenRoutes from './modules/screen/screenRoutes.js'
 
 const app = Fastify({ logger: true })
 
@@ -14,6 +15,7 @@ app.register(corsPlugin)
 app.register(userRoutes)
 app.register(roomRoutes)
 app.register(chatRoutes)
+app.register(screenRoutes)
 
 
 const start = async (): Promise<void> => {

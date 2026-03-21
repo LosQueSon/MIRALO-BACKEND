@@ -2,6 +2,7 @@ import { Collection, Db, MongoClient } from 'mongodb'
 import type { RoomDocument } from '../modules/rooms/roomRepository.js'
 import type { ChatDocument } from '../modules/chats/chatRepository.js'
 import type { UserDocument } from '../modules/users/userRepository.js'
+import type { ScreenDocument } from '../modules/screen/screenRepository.js'
 import 'dotenv/config'
 
 type MongoConnectionStatus = 'idle' | 'connecting' | 'connected' | 'error'
@@ -11,9 +12,11 @@ let db: Db | null = null
 let roomsCollection: Collection<RoomDocument> | null = null
 let chatsCollection: Collection<ChatDocument> | null = null
 let usersCollection: Collection<UserDocument> | null = null
+let screensCollection: Collection<ScreenDocument> | null = null
 let roomsIndexesPromise: Promise<void> | null = null
 let chatsIndexesPromise: Promise<void> | null = null
 let usersIndexesPromise: Promise<void> | null = null
+let screensIndexesPromise: Promise<void> | null = null
 let connectionStatus: MongoConnectionStatus = 'idle'
 
     const shouldLogMongoDebug = (): boolean => {
@@ -133,5 +136,26 @@ export const getUsersCollection = async (): Promise<Collection<UserDocument>> =>
     await usersIndexesPromise
 
     return usersCollection
+}
+
+export const getScreensCollection = async (): Promise<Collection<ScreenDocument>> => {
+    if (screensCollection) {
+        connectionStatus = 'connected'
+        return screensCollection
+    }
+
+    const database = await connectMongo()
+    screensCollection = database.collection<ScreenDocument>('screens')
+
+    if (!screensIndexesPromise) {
+        screensIndexesPromise = Promise.all([
+            screensCollection.createIndex({ roomId: 1 }, { unique: true }),
+            screensCollection.createIndex({ updatedAt: -1 })
+        ]).then(() => undefined)
+    }
+
+    await screensIndexesPromise
+
+    return screensCollection
 }
 
