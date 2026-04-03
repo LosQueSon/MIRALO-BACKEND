@@ -1,0 +1,30 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: ["*"]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build and push Docker image
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+      
+      - run: |
+          docker build -t ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}/watch-parties:${{ github.sha }} .
+          docker push ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}/watch-parties:${{ github.sha }}
+      
+      - uses: azure/webapps-deploy@v2
+        with:
+          app-name: watch-parties-app
+          images: ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}/watch-parties:${{ github.sha }}
+          username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
