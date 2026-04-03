@@ -10,6 +10,10 @@ import screenRoutes from './modules/screen/screenRoutes.js'
 
 const app = Fastify({ logger: true })
 
+fastify.get('/health', async (request, reply) => {
+  return { status: 'ok' }
+})
+
 app.register(websocket)
 app.register(corsPlugin)
 app.register(userRoutes)
