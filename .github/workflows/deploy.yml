@@ -21,10 +21,3 @@ jobs:
       - run: |
           docker build -t ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}/watch-parties:${{ github.sha }} .
           docker push ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}/watch-parties:${{ github.sha }}
-      
-      - uses: azure/webapps-deploy@v2
-        with:
-          app-name: watch-parties-app
-          images: ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}/watch-parties:${{ github.sha }}
-          username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
-          password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
