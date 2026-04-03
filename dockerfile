@@ -7,7 +7,6 @@ RUN npm ci --only=production
 
 COPY . .
 
-# Compilar TypeScript
 RUN npm run build
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
@@ -20,8 +19,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/miralo.js"]
-```
-
-## **3. El comando de inicio en Azure:**
-```
-node dist/miralo.js
