@@ -3,11 +3,13 @@ WORKDIR /app
 RUN apk add --no-cache dumb-init
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 COPY . .
 
 RUN npm run build
+
+RUN npm ci --only=production
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 USER nodejs
