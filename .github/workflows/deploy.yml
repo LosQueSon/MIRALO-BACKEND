@@ -1,0 +1,45 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: ["*"]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push Docker image
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+
+      - run: |
+          docker build -t ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}/watch-parties:${{ github.sha }} .
+          docker push ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}/watch-parties:${{ github.sha }}
+
+      - name: Deployment Info
+        run: |
+          cat << 'EOF'
+          ✅ DEPLOYMENT SUCCESSFUL
+
+          🔗 Backend API Base:
+             https://watch-parties-app.azurewebsites.net
+
+          📺 Rooms endpoints:
+             GET  https://watch-parties-app.azurewebsites.net/rooms
+             GET  https://watch-parties-app.azurewebsites.net/rooms/:roomId/watch-state
+             PATCH https://watch-parties-app.azurewebsites.net/rooms/:roomId/watch-state
+
+          📡 WebSocket URL:
+             wss://watch-parties-app.azurewebsites.net/ws/rooms/:roomId/watch?userId=:userId
+
+          ℹ️ Nota:
+             No existe endpoint /health en el backend actual.
+
+          Share these URLs with your frontend team!
+          EOF
