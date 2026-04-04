@@ -6,6 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  AZURE_APP_NAME: watch-parties-app
 
 jobs:
   test:
@@ -25,7 +26,7 @@ jobs:
       - name: Run tests
         run: npm run test
   
-  build-and-push:
+  build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
     permissions:
@@ -47,6 +48,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Build and push Docker image
+        id: image
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -55,25 +57,28 @@ jobs:
             ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}:latest
             ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}:${{ github.sha }}
       
-      - name: Output Deployment Info
-        run: |
-          echo "IMAGE_URL=${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}:latest" >> $GITHUB_ENV
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_APP_NAME }}
+          images: ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}:latest
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
       
-      - name: Deployment Success
+      - name: Show Backend URL
         run: |
-          cat << 'EOF'
-          ✅ BUILD AND TESTS PASSED
-          ✅ IMAGE PUSHED TO: ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}:latest
-          
-          🔗 BACKEND API:
-             https://watch-parties-app.azurewebsites.net
-          
-          📺 Endpoints:
-             GET  https://watch-parties-app.azurewebsites.net/rooms
-             GET  https://watch-parties-app.azurewebsites.net/rooms/:roomId/watch-state
-             PATCH https://watch-parties-app.azurewebsites.net/rooms/:roomId/watch-state
-          
-          📡 WebSocket:
-             wss://watch-parties-app.azurewebsites.net/ws/rooms/:roomId/watch?userId=:userId
-          
-          EOF
+          echo "=========================================="
+          echo "✅ DEPLOYMENT SUCCESSFUL"
+          echo "=========================================="
+          echo ""
+          echo "🔗 BACKEND API:"
+          echo "   https://${{ env.AZURE_APP_NAME }}.azurewebsites.net"
+          echo ""
+          echo "📺 Endpoints:"
+          echo "   GET  https://${{ env.AZURE_APP_NAME }}.azurewebsites.net/rooms"
+          echo "   GET  https://${{ env.AZURE_APP_NAME }}.azurewebsites.net/rooms/:roomId/watch-state"
+          echo "   PATCH https://${{ env.AZURE_APP_NAME }}.azurewebsites.net/rooms/:roomId/watch-state"
+          echo ""
+          echo "📡 WebSocket:"
+          echo "   wss://${{ env.AZURE_APP_NAME }}.azurewebsites.net/ws/rooms/:roomId/watch?userId=:userId"
+          echo ""
+          echo "=========================================="
