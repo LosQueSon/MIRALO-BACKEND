@@ -4,42 +4,47 @@ on:
   push:
     branches: ["*"]
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
     steps:
       - uses: actions/checkout@v4
-
-      - name: Build and push Docker image
-        uses: azure/docker-login@v1
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
         with:
-          login-server: ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}
-          username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
-          password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
-
-      - run: |
-          docker build -t ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}/watch-parties:${{ github.sha }} .
-          docker push ${{ secrets.AZURE_REGISTRY_LOGIN_SERVER }}/watch-parties:${{ github.sha }}
-
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+      
       - name: Deployment Info
         run: |
           cat << 'EOF'
           ✅ DEPLOYMENT SUCCESSFUL
-
           🔗 Backend API Base:
              https://watch-parties-app.azurewebsites.net
-
           📺 Rooms endpoints:
              GET  https://watch-parties-app.azurewebsites.net/rooms
              GET  https://watch-parties-app.azurewebsites.net/rooms/:roomId/watch-state
              PATCH https://watch-parties-app.azurewebsites.net/rooms/:roomId/watch-state
-
           📡 WebSocket URL:
              wss://watch-parties-app.azurewebsites.net/ws/rooms/:roomId/watch?userId=:userId
-
-          ℹ️ Nota:
-             No existe endpoint /health en el backend actual.
-
           Share these URLs with your frontend team!
           EOF
