@@ -1,9 +1,10 @@
-name: Build and Test Node.js Application
+name: Build, Test and Deploy
 
 on:
   push:
     branches:
       - main
+      - featureScreen
   pull_request:
   workflow_dispatch:
 
@@ -36,54 +37,51 @@ jobs:
         run: npm ci
       - name: Run Tests
         run: npm run test
-      - name: Upload Test Report
-        uses: actions/upload-artifact@v4
-        if: success() || failure()
-        with:
-          name: test-report
-          path: coverage/
 
   deploy:
     runs-on: ubuntu-latest
     needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/featureScreen'
     environment:
       name: 'Production'
-      url: https://watch-parties-app.azurewebsites.net
-    permissions:
-      id-token: write
-      contents: read
+      url: https://watch-parties-app-ebamf8g6fuaecth3.eastus-01.azurewebsites.net
     steps:
       - uses: actions/checkout@v4
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
+      
       - name: Install and Build
         run: |
           npm ci
           npm run build
-      - name: Deploy to Azure App Service
+      
+      - name: Deploy to Azure
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'watch-parties-app'
           publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
           package: '.'
-      - name: Backend URLs
+      
+      - name: Deployment Success
         run: |
           echo "=========================================="
           echo "✅ DEPLOYMENT SUCCESSFUL"
           echo "=========================================="
           echo ""
           echo "🔗 BACKEND API:"
-          echo "   https://watch-parties-app.azurewebsites.net"
+          echo "   https://watch-parties-app-ebamf8g6fuaecth3.eastus-01.azurewebsites.net"
           echo ""
           echo "📺 Endpoints:"
-          echo "   GET  https://watch-parties-app.azurewebsites.net/rooms"
-          echo "   GET  https://watch-parties-app.azurewebsites.net/rooms/:roomId/watch-state"
-          echo "   PATCH https://watch-parties-app.azurewebsites.net/rooms/:roomId/watch-state"
+          echo "   GET  https://watch-parties-app-ebamf8g6fuaecth3.eastus-01.azurewebsites.net/rooms"
+          echo "   GET  https://watch-parties-app-ebamf8g6fuaecth3.eastus-01.azurewebsites.net/rooms/:roomId/watch-state"
+          echo "   PATCH https://watch-parties-app-ebamf8g6fuaecth3.eastus-01.azurewebsites.net/rooms/:roomId/watch-state"
           echo ""
           echo "📡 WebSocket:"
-          echo "   wss://watch-parties-app.azurewebsites.net/ws/rooms/:roomId/watch?userId=:userId"
+          echo "   wss://watch-parties-app-ebamf8g6fuaecth3.eastus-01.azurewebsites.net/ws/rooms/:roomId/watch?userId=:userId"
           echo ""
+          echo "Share these URLs with your frontend team!"
           echo "=========================================="
