@@ -6,10 +6,27 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm run test
+  
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -17,6 +34,10 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Set lowercase repo name
+        id: repo
+        run: echo "name=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
       
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -31,20 +52,28 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}:latest
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}:${{ github.sha }}
       
-      - name: Deployment Info
+      - name: Output Deployment Info
+        run: |
+          echo "IMAGE_URL=${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}:latest" >> $GITHUB_ENV
+      
+      - name: Deployment Success
         run: |
           cat << 'EOF'
-          ✅ DEPLOYMENT SUCCESSFUL
-          🔗 Backend API Base:
+          ✅ BUILD AND TESTS PASSED
+          ✅ IMAGE PUSHED TO: ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}:latest
+          
+          🔗 BACKEND API:
              https://watch-parties-app.azurewebsites.net
-          📺 Rooms endpoints:
+          
+          📺 Endpoints:
              GET  https://watch-parties-app.azurewebsites.net/rooms
              GET  https://watch-parties-app.azurewebsites.net/rooms/:roomId/watch-state
              PATCH https://watch-parties-app.azurewebsites.net/rooms/:roomId/watch-state
-          📡 WebSocket URL:
+          
+          📡 WebSocket:
              wss://watch-parties-app.azurewebsites.net/ws/rooms/:roomId/watch?userId=:userId
-          Share these URLs with your frontend team!
+          
           EOF
