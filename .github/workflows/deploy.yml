@@ -2,7 +2,7 @@ name: Deploy Node App to Azure Web App
 
 on:
   push:
-    branches: [ "featureScreen" ]
+    branches: [ "develop" ]
 
 jobs:
   build-and-deploy:
