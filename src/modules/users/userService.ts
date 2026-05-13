@@ -5,10 +5,6 @@ import type {
   User
 } from './user.js'
 import userRepository from './userRepository.js'
-import roomService from '../rooms/roomService.js'
-import type { Room } from '../rooms/room.js'
-import type { Chat } from '../chats/chat.js'
-import chatService from '../chats/chatService.js'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -34,11 +30,6 @@ const validateEmail = (email: string | undefined): void => {
   if (!email || !EMAIL_REGEX.test(email)) {
     throw new AppError(400, 'INVALID_EMAIL', 'El email no es valido')
   }
-}
-
-type JoinRoomResult = {
-  room: Room
-  chat: Chat
 }
 
 const userService = {
@@ -138,37 +129,6 @@ const userService = {
     if (!deleted) {
       throw new AppError(404, 'USER_NOT_FOUND', 'Usuario no encontrado')
     }
-  },
-
-  async joinRoomForUser(userId: string, roomId: string, accessCode?: string): Promise<JoinRoomResult> {
-    validateId(userId)
-    validateId(roomId)
-
-    const user = await userRepository.findById(userId)
-    if (!user) {
-      throw new AppError(404, 'USER_NOT_FOUND', 'Usuario no encontrado')
-    }
-
-    await roomService.validateJoinEligibility(roomId, accessCode?.trim())
-    const room = await roomService.addUser(roomId, user.id)
-    const chat = await chatService.getOrCreateChat(roomId)
-
-    return {
-      room,
-      chat
-    }
-  },
-
-  async leaveRoomForUser(userId: string, roomId: string): Promise<Room> {
-    validateId(userId)
-    validateId(roomId)
-
-    const user = await userRepository.findById(userId)
-    if (!user) {
-      throw new AppError(404, 'USER_NOT_FOUND', 'Usuario no encontrado')
-    }
-
-    return roomService.removeUser(roomId, user.id)
   }
 }
 
