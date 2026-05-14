@@ -1,7 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { AppError } from '../../shared/appError.js'
 import roomServiceModule from './roomService.js'
-import userServiceModule from '../users/userService.js'
 import type { RoomGenre } from './room.js'
 
 
@@ -18,8 +17,7 @@ type UpdateWatchBody = {
 
 export default class RoomController {
     constructor(
-        private readonly roomService: typeof roomServiceModule,
-        private readonly userService: typeof userServiceModule
+        private readonly roomService: typeof roomServiceModule
     ) {}
 
     getRooms = async (_request: FastifyRequest, reply: FastifyReply): Promise<void> => {
@@ -63,7 +61,7 @@ export default class RoomController {
             const userId = String(request.params.id)
             const accessCode = request.body?.accessCode
 
-            const result = await this.userService.joinRoomForUser(userId, roomId, accessCode)
+            const result = await this.roomService.joinRoomForUser(userId, roomId, accessCode)
             reply.code(200).send(result)
         } catch (error) {
             this.handleError(error, reply)
@@ -78,7 +76,7 @@ export default class RoomController {
             const roomId = String(request.params.roomId)
             const userId = String(request.params.id)
 
-            const room = await this.userService.leaveRoomForUser(userId, roomId)
+            const room = await this.roomService.leaveRoomForUser(userId, roomId)
             reply.code(200).send(room)
         } catch (error) {
             this.handleError(error, reply)
@@ -116,6 +114,20 @@ export default class RoomController {
         }
     }
 
+    getUsersGenres = async (
+        request: FastifyRequest<{ Params: RoomParams }>,
+        reply: FastifyReply
+    ): Promise<void> => {
+        try {
+            const roomId = String(request.params.roomId)
+            const data = await this.roomService.getUsersGenres(roomId)
+            // Devolver en formato { userId, favoriteGenre }
+            reply.code(200).send(data)
+        } catch (error) {
+            this.handleError(error, reply)
+        }
+    }
+
     private handleError(error: unknown, reply: FastifyReply): void {
         if (error instanceof AppError) {
             reply.code(error.statusCode).send({
@@ -132,3 +144,5 @@ export default class RoomController {
     }
 
 }
+
+

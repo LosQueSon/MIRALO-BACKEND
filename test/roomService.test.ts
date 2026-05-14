@@ -18,9 +18,17 @@ vi.mock('../src/modules/chats/chatService.js', () => ({
   }
 }))
 
+vi.mock('../src/modules/users/userRepository.js', () => ({
+  default: {
+    findById: vi.fn(),
+    addFavoriteGenre: vi.fn()
+  }
+}))
+
 import roomService from '../src/modules/rooms/roomService.js'
 import roomRepository from '../src/modules/rooms/roomRepository.js'
 import chatService from '../src/modules/chats/chatService.js'
+import userRepository from '../src/modules/users/userRepository.js'
 import { AppError } from '../src/shared/appError.js'
 
 const hostId = '507f1f77bcf86cd799439011'
@@ -188,6 +196,58 @@ describe('roomService', () => {
     await expect(roomService.validateJoinEligibility(roomId)).resolves.toEqual(room)
   })
 
+  it('joinRoomForUser valida ids y usuario', async () => {
+    await expect(roomService.joinRoomForUser('123', roomId)).rejects.toMatchObject({ code: 'INVALID_ID' })
+    await expect(roomService.joinRoomForUser(hostId, '123')).rejects.toMatchObject({ code: 'INVALID_ID' })
+
+    vi.mocked(userRepository.findById).mockResolvedValue(null)
+    await expect(roomService.joinRoomForUser(hostId, roomId)).rejects.toMatchObject({ code: 'USER_NOT_FOUND' })
+  })
+
+  it('joinRoomForUser agrega usuario, genero favorito y retorna room+chat', async () => {
+    const room = createRoomFixture()
+    const user = {
+      id: hostId,
+      googleId: 'google-1',
+      name: 'Alice',
+      email: 'alice@example.com',
+      favoriteGenres: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+
+    vi.mocked(userRepository.findById).mockResolvedValue(user)
+    vi.mocked(roomRepository.findById).mockResolvedValue(room)
+    vi.mocked(roomRepository.addUser).mockResolvedValue(room)
+    vi.mocked(userRepository.addFavoriteGenre).mockResolvedValue({ ...user, favoriteGenres: ['other'] })
+    vi.mocked(chatService.getOrCreateChat).mockResolvedValue({ id: '507f1f77bcf86cd799439013' } as never)
+
+    const result = await roomService.joinRoomForUser(hostId, roomId, ' 1234 ')
+
+    expect(userRepository.addFavoriteGenre).toHaveBeenCalledWith(hostId, 'other')
+    expect(result.room).toEqual(room)
+    expect(result.chat.id).toBe('507f1f77bcf86cd799439013')
+  })
+
+  it('leaveRoomForUser valida usuario y remueve de sala', async () => {
+    const room = createRoomFixture()
+    const user = {
+      id: hostId,
+      googleId: 'google-1',
+      name: 'Alice',
+      email: 'alice@example.com',
+      favoriteGenres: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+
+    vi.mocked(userRepository.findById).mockResolvedValue(user)
+    vi.mocked(roomRepository.findById).mockResolvedValue(room)
+    vi.mocked(roomRepository.removeUser).mockResolvedValue({ ...room, userIds: [] })
+
+    await expect(roomService.leaveRoomForUser(hostId, roomId)).resolves.toEqual({ ...room, userIds: [] })
+  })
+
   it('addUser y removeUser validan existencia de sala', async () => {
     vi.mocked(roomRepository.findById).mockResolvedValue(null)
     await expect(roomService.addUser(roomId, hostId)).rejects.toMatchObject({ code: 'ROOM_NOT_FOUND' })
@@ -217,6 +277,57 @@ describe('roomService', () => {
   it('getWatchState valida existencia', async () => {
     vi.mocked(roomRepository.findById).mockResolvedValue(null)
     await expect(roomService.getWatchState(roomId)).rejects.toMatchObject({ code: 'ROOM_NOT_FOUND' })
+  })
+
+  it('getUsersGenres lanza ROOM_NOT_FOUND si la sala no existe', async () => {
+    vi.mocked(roomRepository.findById).mockResolvedValue(null)
+
+    await expect(roomService.getUsersGenres(roomId)).rejects.toMatchObject({ code: 'ROOM_NOT_FOUND' })
+  })
+
+  it('getUsersGenres conserva el orden y calcula el genero favorito por usuario', async () => {
+    const room = {
+      ...createRoomFixture(),
+      userIds: [hostId, '507f1f77bcf86cd799439014', '507f1f77bcf86cd799439015', '507f1f77bcf86cd799439016']
+    }
+
+    vi.mocked(roomRepository.findById).mockResolvedValue(room)
+    vi.mocked(userRepository.findById)
+      .mockResolvedValueOnce({
+        id: hostId,
+        googleId: 'google-1',
+        name: 'Alice',
+        email: 'alice@example.com',
+        favoriteGenres: ['action', 'action', 'comedy'],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .mockResolvedValueOnce({
+        id: '507f1f77bcf86cd799439014',
+        googleId: 'google-2',
+        name: 'Bob',
+        email: 'bob@example.com',
+        favoriteGenres: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: '507f1f77bcf86cd799439016',
+        googleId: 'google-4',
+        name: 'Diana',
+        email: 'diana@example.com',
+        favoriteGenres: ['thriller', 'comedy', 'thriller', 'comedy'],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+
+    await expect(roomService.getUsersGenres(roomId)).resolves.toEqual([
+      { userId: hostId, favoriteGenre: 'action' },
+      { userId: '507f1f77bcf86cd799439014', favoriteGenre: null },
+      { userId: '507f1f77bcf86cd799439015', favoriteGenre: null },
+      { userId: '507f1f77bcf86cd799439016', favoriteGenre: 'thriller' }
+    ])
   })
 
   it('updateWatchState valida posicion y actualiza reproduccion', async () => {

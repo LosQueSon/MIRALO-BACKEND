@@ -1,6 +1,7 @@
 import { Collection, ObjectId, type WithId } from 'mongodb'
 import { getUsersCollection } from '../../config/mongo.js'
 import type { CreateUserInput, UpdateUserInput, User } from './user.js'
+import type { RoomGenre } from '../rooms/room.js'
 
 export interface UserDocument {
   _id?: ObjectId
@@ -30,7 +31,7 @@ const toUser = (doc: WithId<UserDocument>): User => {
     googleId: doc.googleId,
     name: doc.name,
     email: doc.email,
-    favoriteGenres: [],
+    favoriteGenres: doc.favoriteGenres,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt
   }
@@ -125,6 +126,24 @@ const userRepository = {
     const usersCollection = await resolveCollection()
     const result = await usersCollection.deleteOne({ _id: new ObjectId(id) })
     return result.deletedCount > 0
+  },
+
+  async addFavoriteGenre(id: string, genre: RoomGenre): Promise<User | null> {
+    if (!ObjectId.isValid(id)) {
+      return null
+    }
+
+    const usersCollection = await resolveCollection()
+    const document = await usersCollection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      {
+        $addToSet: { favoriteGenres: genre },
+        $set: { updatedAt: new Date() }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return document ? toUser(document) : null
   }
 }
 

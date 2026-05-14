@@ -18,6 +18,7 @@ Actualmente el backend tiene estos modulos activos:
   - `POST /rooms/:roomId/users/:id/leave`
 - La room se crea con `contentUrl` (URL del contenido a sincronizar).
 - El estado de reproduccion se guarda en la room (`playback`) con versionado.
+- Se agrego un endpoint WebSocket unificado para chat + watchparty en una sola conexion.
 
 ## Stack tecnico
 
@@ -27,7 +28,7 @@ Actualmente el backend tiene estos modulos activos:
 - MongoDB
 - Vitest + cobertura V8
 
-> Nota: existe dependencia `redis` en `package.json`, pero en el estado actual el broadcast WebSocket se maneja en memoria del proceso.
+> Nota: la sincronizacion de `watch_state` usa Redis Pub/Sub y soporta fallback a memoria local por instancia.
 
 ## Estructura principal
 
@@ -36,6 +37,7 @@ Actualmente el backend tiene estos modulos activos:
 - `src/modules/users/*`: rutas, controlador, servicio y repositorio de usuarios.
 - `src/modules/rooms/*`: rutas, controlador, servicio, repositorio y WS de watchparty.
 - `src/modules/chats/*`: rutas, controlador, servicio, repositorio y WS de chat.
+- `src/modules/realtime/*`: WS unificado para eventos de chat y watchparty.
 - `src/shared/*`: utilidades compartidas (`AppError`, `JwtService`).
 - `test/*.test.ts`: pruebas unitarias de servicios/core.
 
@@ -68,8 +70,32 @@ Actualmente el backend tiene estos modulos activos:
 
 ### WebSocket
 
+Recomendado (una sola conexion por sala):
+
+- Realtime: `ws://localhost:5000/ws/rooms/:roomId/realtime?userId=<USER_ID>`
+
+Compatibilidad (endpoints separados):
+
 - Watchparty: `ws://localhost:5000/ws/rooms/:roomId/watch?userId=<USER_ID>`
 - Chat: `ws://localhost:5000/ws/rooms/:roomId/chat?userId=<USER_ID>`
+
+Ejemplos de eventos para realtime:
+
+```json
+{ "event": "watch.play", "positionMs": 42000 }
+```
+
+```json
+{ "event": "watch.pause", "positionMs": 43000 }
+```
+
+```json
+{ "event": "chat.send_message", "content": "Hola a todos" }
+```
+
+```json
+{ "event": "chat.get_history", "limit": 50 }
+```
 
 ## Variables de entorno
 
@@ -80,7 +106,15 @@ JWT_SECRET=super_secreto_largo
 MONGODB_URI=mongodb://localhost:27017
 MONGODB_DB_NAME=miralo
 MONGO_DEBUG=true
+REDIS_URL=redis://localhost:6379
+WATCH_SYNC_MODE=redis-with-fallback
 ```
+
+Valores de `WATCH_SYNC_MODE`:
+
+- `redis`: modo estricto. Si Redis falla, no hay fallback y la app puede no iniciar.
+- `redis-with-fallback` (default): intenta Redis y cae a memoria local si hay error.
+- `memory`: usa solo memoria local (sin Redis).
 
 ## Como ejecutar en local
 
@@ -134,6 +168,6 @@ Configuracion actual de cobertura en `vitest.config.mjs`:
 1. Crear 2 usuarios con `POST /users/create`.
 2. Crear room con `POST /rooms/create` usando `hostId` del usuario A y `contentUrl`.
 3. Unir usuario B con `POST /rooms/:roomId/users/:id/join`.
-4. Controlar reproduccion con `PATCH /rooms/:roomId/watch-state` (`play`, `pause`, `seek`).
-5. Verificar estado con `GET /rooms/:roomId/watch-state`.
+4. Conectar por WebSocket a `ws://localhost:5000/ws/rooms/:roomId/realtime?userId=<USER_ID>`.
+5. Enviar eventos `watch.play` / `watch.pause` y `chat.send_message` para validar ambas funciones en una sola conexion.
 6. Salir de la sala con `POST /rooms/:roomId/users/:id/leave`.
