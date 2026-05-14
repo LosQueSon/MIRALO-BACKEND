@@ -2,7 +2,7 @@ name: Test + Sonar + Deploy to Azure
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "featureScreen" ]
 
 jobs:
   test-and-sonar:
