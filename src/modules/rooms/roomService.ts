@@ -25,20 +25,7 @@ import type { Chat } from '../chats/chat.js'
             }
         }
 
-        const validateContentUrl = (value: string): string => {
-            const normalized = value.trim()
-
-            try {
-                const parsed = new URL(normalized)
-                if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-                    throw new AppError(400, 'ROOM_INVALID_CONTENT_URL', 'La URL del contenido debe ser http o https')
-                }
-            } catch {
-                throw new AppError(400, 'ROOM_INVALID_CONTENT_URL', 'La URL del contenido no es valida')
-            }
-
-            return normalized
-        }
+        // validateContentUrl removed: contentUrl is accepted as-is and validated elsewhere if needed
 
         const normalizeGenre = (genre: RoomGenre | undefined): RoomGenre => {
             return genre ?? 'other'

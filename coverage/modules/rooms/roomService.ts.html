@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.76% </span>
+                <span class="strong">96.51% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>167/184</span>
+                <span class='fraction'>166/172</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">93.75% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>15/16</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.76% </span>
+                <span class="strong">96.51% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>167/184</span>
+                <span class='fraction'>166/172</span>
             </div>
         
             
@@ -311,20 +311,7 @@
 <a name='L246'></a><a href='#L246'>246</a>
 <a name='L247'></a><a href='#L247'>247</a>
 <a name='L248'></a><a href='#L248'>248</a>
-<a name='L249'></a><a href='#L249'>249</a>
-<a name='L250'></a><a href='#L250'>250</a>
-<a name='L251'></a><a href='#L251'>251</a>
-<a name='L252'></a><a href='#L252'>252</a>
-<a name='L253'></a><a href='#L253'>253</a>
-<a name='L254'></a><a href='#L254'>254</a>
-<a name='L255'></a><a href='#L255'>255</a>
-<a name='L256'></a><a href='#L256'>256</a>
-<a name='L257'></a><a href='#L257'>257</a>
-<a name='L258'></a><a href='#L258'>258</a>
-<a name='L259'></a><a href='#L259'>259</a>
-<a name='L260'></a><a href='#L260'>260</a>
-<a name='L261'></a><a href='#L261'>261</a>
-<a name='L262'></a><a href='#L262'>262</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L249'></a><a href='#L249'>249</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -351,20 +338,7 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">3x</span>
@@ -612,20 +586,7 @@ import type { Chat } from '../chats/chat.js'
             }
         }
 &nbsp;
-        const validateContentUrl = <span class="fstat-no" title="function not covered" >(value: string): string =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >            const normalized = value.trim()</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >            try {</span>
-<span class="cstat-no" title="statement not covered" >                const parsed = new URL(normalized)</span>
-<span class="cstat-no" title="statement not covered" >                if (parsed.protocol !== 'http:' &amp;&amp; parsed.protocol !== 'https:') {</span>
-<span class="cstat-no" title="statement not covered" >                    throw new AppError(400, 'ROOM_INVALID_CONTENT_URL', 'La URL del contenido debe ser http o https')</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" >            } catch {</span>
-<span class="cstat-no" title="statement not covered" >                throw new AppError(400, 'ROOM_INVALID_CONTENT_URL', 'La URL del contenido no es valida')</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >            return normalized</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
+        // validateContentUrl removed: contentUrl is accepted as-is and validated elsewhere if needed
 &nbsp;
         const normalizeGenre = (genre: RoomGenre | undefined): RoomGenre =&gt; {
             return <span class="branch-0 cbranch-no" title="branch not covered" >genre ?? 'other'</span>
@@ -853,7 +814,7 @@ export default roomService</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-14T00:45:42.675Z
+                at 2026-05-14T01:01:30.626Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
