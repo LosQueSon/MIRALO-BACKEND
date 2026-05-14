@@ -17,7 +17,6 @@ export default defineConfig({
         'src/modules/chats/chatService.ts',
         'src/modules/chats/chatController.ts'
       ],
-      exclude: [],
       thresholds: {
         lines: 80,
         functions: 80,

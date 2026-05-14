@@ -121,5 +121,16 @@ describe('userService', () => {
     await expect(userService.deleteUser(userId)).rejects.toMatchObject({ code: 'USER_NOT_FOUND' })
   })
 
+  it('createUser valida googleId, name y email', async () => {
+    // missing googleId
+    await expect(userService.createUser({ googleId: '', name: 'Alice', email: 'a@b.com' } as any)).rejects.toMatchObject({ code: 'INVALID_GOOGLE_ID' })
+
+    // invalid name
+    await expect(userService.createUser({ googleId: 'g1', name: 'A', email: 'a@b.com' } as any)).rejects.toMatchObject({ code: 'INVALID_NAME' })
+
+    // invalid email
+    await expect(userService.createUser({ googleId: 'g1', name: 'Alice', email: 'not-an-email' } as any)).rejects.toMatchObject({ code: 'INVALID_EMAIL' })
+  })
+
 })
 

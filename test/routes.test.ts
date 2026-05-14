@@ -5,6 +5,9 @@ describe('Module Routes', () => {
   let fastify: FastifyInstance
 
   beforeEach(() => {
+    // Configure JWT_SECRET for tests
+    process.env.JWT_SECRET = 'test-secret-key-' + Math.random().toString(36).substring(7)
+
     fastify = {
       get: vi.fn(),
       post: vi.fn(),
