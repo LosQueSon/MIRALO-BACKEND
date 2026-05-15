@@ -214,7 +214,21 @@ const roomService = {
         }
 
         const transitionedRoom = await roomRepository.update(roomId, transitionUpdate)
-        return transitionedRoom ?? updatedRoom
+        // Si la sala quedó en 'finished', eliminamos en background para evitar
+        // retener registros obsoletos. No esperamos el resultado para no bloquear
+        // la respuesta; cualquier error se registra en consola.
+        const resultRoom = transitionedRoom ?? updatedRoom
+        if ((transitionUpdate.state ?? resultRoom.state) === 'finished') {
+            void (async () => {
+                try {
+                    await roomRepository.delete(roomId)
+                } catch (err) {
+                    console.warn('[room-service] No se pudo eliminar sala finished:', roomId, err)
+                }
+            })()
+        }
+
+        return resultRoom
     },
 
     ensureUserInRoom: async (roomId: string, userId: string): Promise<Room> => {

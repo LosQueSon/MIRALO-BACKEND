@@ -297,6 +297,27 @@ describe('roomService', () => {
     expect(roomRepository.update).toHaveBeenCalledWith(roomId, { state: 'waiting' })
   })
 
+  it('cuando queda 0 usuarios se marca finished y se borra la sala', async () => {
+    const room = {
+      ...createRoomFixture(),
+      state: 'waiting' as const,
+      userIds: [hostId]
+    }
+    const afterLeave = { ...room, userIds: [] }
+    const finishedRoom = { ...afterLeave, state: 'finished' as const }
+
+    vi.mocked(roomRepository.findById).mockResolvedValue(room)
+    vi.mocked(roomRepository.removeUser).mockResolvedValue(afterLeave)
+    vi.mocked(roomRepository.update).mockResolvedValue(finishedRoom)
+    vi.mocked(roomRepository.delete).mockResolvedValue(true)
+
+    const res = await roomService.removeUser(roomId, hostId)
+
+    expect(res.state).toBe('finished')
+    // delete se invoca en background; assert que fue llamado
+    expect(roomRepository.delete).toHaveBeenCalledWith(roomId)
+  })
+
   it('ensureUserInRoom valida membresia', async () => {
     vi.mocked(roomRepository.findById).mockResolvedValue(null)
     await expect(roomService.ensureUserInRoom(roomId, hostId)).rejects.toMatchObject({ code: 'ROOM_NOT_FOUND' })
