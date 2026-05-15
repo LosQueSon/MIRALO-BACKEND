@@ -45,6 +45,12 @@ describe('userService', () => {
     await expect(userService.getUserById(userId)).rejects.toMatchObject({ code: 'USER_NOT_FOUND' })
   })
 
+  it('getUserById retorna usuario cuando existe', async () => {
+    const u = userFixture()
+    vi.mocked(userRepository.findById).mockResolvedValue(u)
+    await expect(userService.getUserById(userId)).resolves.toEqual(u)
+  })
+
   it('createUser retorna usuario existente por email', async () => {
     const existing = userFixture()
     vi.mocked(userRepository.findByEmail).mockResolvedValue(existing)

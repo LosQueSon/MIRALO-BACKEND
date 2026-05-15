@@ -52,7 +52,9 @@ describe('RoomController', () => {
       leaveRoomForUser: vi.fn(),
       getWatchState: vi.fn(),
       updateWatchState: vi.fn(),
-      getUsersGenres: vi.fn()
+      getUsersGenres: vi.fn(),
+      updateRoom: vi.fn(),
+      deleteRoom: vi.fn()
     }
     controller = new RoomController(mockRoomService)
   })
@@ -376,5 +378,154 @@ describe('RoomController', () => {
       expect(reply.code).toHaveBeenCalledWith(404)
     })
   })
-})
 
+  describe('updateRoom', () => {
+    it('updates room successfully', async () => {
+      const request = mockRequest({
+        params: { roomId: '507f1f77bcf86cd799439012' },
+        body: {
+          name: 'Updated Room',
+          maxUsers: 10
+        },
+        user: { id: '507f1f77bcf86cd799439011' }
+      })
+      const reply = mockReply()
+      const updatedRoom = { ...roomFixture, name: 'Updated Room', maxUsers: 10 }
+
+      mockRoomService.updateRoom.mockResolvedValue(updatedRoom)
+
+      // Mock the user in request
+      ;(request as any).user = { id: '507f1f77bcf86cd799439011' }
+
+      await controller.updateRoom(request, reply)
+
+      expect(mockRoomService.updateRoom).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439012',
+        '507f1f77bcf86cd799439011',
+        {
+          name: 'Updated Room',
+          maxUsers: 10
+        }
+      )
+      expect(reply.code).toHaveBeenCalledWith(200)
+      expect(reply.send).toHaveBeenCalledWith(updatedRoom)
+    })
+
+    it('returns 401 if user is not authenticated', async () => {
+      const request = mockRequest({
+        params: { roomId: '507f1f77bcf86cd799439012' },
+        body: { name: 'Updated Room' }
+      })
+      const reply = mockReply()
+
+      await controller.updateRoom(request, reply)
+
+      expect(reply.code).toHaveBeenCalledWith(401)
+      expect(reply.send).toHaveBeenCalledWith({
+        code: 'UNAUTHORIZED',
+        message: 'Debe estar autenticado'
+      })
+    })
+
+    it('handles service errors', async () => {
+      const request = mockRequest({
+        params: { roomId: '507f1f77bcf86cd799439012' },
+        body: { isPrivate: true },
+        user: { id: '507f1f77bcf86cd799439011' }
+      })
+      const reply = mockReply()
+      ;(request as any).user = { id: '507f1f77bcf86cd799439011' }
+
+      mockRoomService.updateRoom.mockRejectedValue(
+        new AppError(403, 'ROOM_FORBIDDEN', 'Solo el host puede actualizar la sala')
+      )
+
+      await controller.updateRoom(request, reply)
+
+      expect(reply.code).toHaveBeenCalledWith(403)
+      expect(reply.send).toHaveBeenCalledWith({
+        code: 'ROOM_FORBIDDEN',
+        message: 'Solo el host puede actualizar la sala'
+      })
+    })
+  })
+
+  describe('deleteRoom', () => {
+    it('deletes room successfully', async () => {
+      const request = mockRequest({
+        params: { roomId: '507f1f77bcf86cd799439012' },
+        user: { id: '507f1f77bcf86cd799439011' }
+      })
+      const reply = mockReply()
+      ;(request as any).user = { id: '507f1f77bcf86cd799439011' }
+
+      mockRoomService.deleteRoom.mockResolvedValue(undefined)
+
+      await controller.deleteRoom(request, reply)
+
+      expect(mockRoomService.deleteRoom).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439012',
+        '507f1f77bcf86cd799439011'
+      )
+      expect(reply.code).toHaveBeenCalledWith(204)
+      expect(reply.send).toHaveBeenCalledWith()
+    })
+
+    it('returns 401 if user is not authenticated', async () => {
+      const request = mockRequest({
+        params: { roomId: '507f1f77bcf86cd799439012' }
+      })
+      const reply = mockReply()
+
+      await controller.deleteRoom(request, reply)
+
+      expect(reply.code).toHaveBeenCalledWith(401)
+      expect(reply.send).toHaveBeenCalledWith({
+        code: 'UNAUTHORIZED',
+        message: 'Debe estar autenticado'
+      })
+    })
+
+    it('handles service errors (ROOM_FORBIDDEN)', async () => {
+      const request = mockRequest({
+        params: { roomId: '507f1f77bcf86cd799439012' },
+        user: { id: '507f1f77bcf86cd799439011' }
+      })
+      const reply = mockReply()
+      ;(request as any).user = { id: '507f1f77bcf86cd799439011' }
+
+      mockRoomService.deleteRoom.mockRejectedValue(
+        new AppError(403, 'ROOM_FORBIDDEN', 'Solo el host puede eliminar la sala')
+      )
+
+      await controller.deleteRoom(request, reply)
+
+      expect(reply.code).toHaveBeenCalledWith(403)
+      expect(reply.send).toHaveBeenCalledWith({
+        code: 'ROOM_FORBIDDEN',
+        message: 'Solo el host puede eliminar la sala'
+      })
+    })
+
+    it('handles service errors (ROOM_NOT_FOUND)', async () => {
+      const request = mockRequest({
+        params: { roomId: '507f1f77bcf86cd799439012' },
+        user: { id: '507f1f77bcf86cd799439011' }
+      })
+      const reply = mockReply()
+      ;(request as any).user = { id: '507f1f77bcf86cd799439011' }
+
+      mockRoomService.deleteRoom.mockRejectedValue(
+        new AppError(404, 'ROOM_NOT_FOUND', 'Sala no encontrada')
+      )
+
+      await controller.deleteRoom(request, reply)
+
+      expect(reply.code).toHaveBeenCalledWith(404)
+      expect(reply.send).toHaveBeenCalledWith({
+        code: 'ROOM_NOT_FOUND',
+        message: 'Sala no encontrada'
+      })
+    })
+  })
+})
